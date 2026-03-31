@@ -1,0 +1,30 @@
+name: Homebrew Tap CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  audit-and-test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tap formula locally
+        run: |
+          brew tap --overwrite kckylechen1/tachi "$GITHUB_WORKSPACE"
+
+      - name: Audit formula
+        run: |
+          brew audit --strict kckylechen1/tachi/tachi
+
+      - name: Install formula from tap
+        run: |
+          brew install --build-from-source kckylechen1/tachi/tachi
+
+      - name: Run formula test
+        run: |
+          brew test kckylechen1/tachi/tachi

@@ -6,6 +6,11 @@ class Tachi < Formula
   license "AGPL-3.0"
   head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
+  livecheck do
+    url :stable
+    regex(/^v?(\d+(?:\.\d+)+)$/i)
+  end
+
   depends_on "rust" => :build
 
   def install
@@ -15,24 +20,44 @@ class Tachi < Formula
   end
 
   test do
-    assert_match "tachi", shell_output("#{bin}/tachi --version")
+    assert_match version.to_s, shell_output("#{bin}/tachi --version")
+    assert_match "memory + Hub MCP server", shell_output("#{bin}/tachi --help")
+
+    db_path = testpath/"tachi-homebrew-test.db"
+    text = "Homebrew smoke test memory"
+
+    saved = shell_output("MEMORY_DB_PATH=#{db_path} #{bin}/tachi --no-project-db save --path /test/homebrew '#{text}'")
+    assert_match '"saved": true', saved
+
+    stats = shell_output("MEMORY_DB_PATH=#{db_path} #{bin}/tachi --no-project-db stats")
+    assert_match '"total": 1', stats
+    assert_match db_path.to_s, stats
   end
 
   def caveats
     <<~EOS
-      To use Tachi with your AI agent, add to your MCP config:
+      Tachi is installed at:
+
+        #{opt_bin}/tachi
+
+      To use Tachi with your MCP client, add this command to your config:
 
         {
           "mcpServers": {
             "tachi": {
-              "command": "#{HOMEBREW_PREFIX}/bin/tachi"
+              "command": "#{opt_bin}/tachi"
             }
           }
         }
 
-      API keys (optional, for embedding + LLM features):
+      Optional environment variables:
         export VOYAGE_API_KEY="your_key"
         export SILICONFLOW_API_KEY="your_key"
+        export MEMORY_DB_PATH="$HOME/.Tachi/global/memory.db"
+
+      Quick smoke test:
+        tachi --help
+        tachi --no-project-db stats
     EOS
   end
 end
