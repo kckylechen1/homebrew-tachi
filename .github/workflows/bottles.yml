@@ -1,0 +1,165 @@
+name: Build and Upload Bottles
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build bottles for (e.g., 0.14.0)'
+        required: true
+        type: string
+
+jobs:
+  build-bottles:
+    strategy:
+      matrix:
+        include:
+          - os: macos-14
+            arch: arm64
+            bottle_tag: arm64_tahoe
+          - os: macos-13
+            arch: x86_64
+            bottle_tag: ventura
+          - os: ubuntu-22.04
+            arch: x86_64
+            bottle_tag: x86_64_linux
+      fail-fast: false
+    
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Install Rust
+        uses: dtolnay/rust-action@stable
+
+      - name: Build bottle
+        run: |
+          # Create bottle
+          brew install --build-bottle ./Formula/tachi.rb
+          brew bottle --json --root-url="https://github.com/kckylechen1/homebrew-tachi/releases/download/v${{ github.event.inputs.version || github.ref_name }}" ./Formula/tachi.rb
+          
+          # Rename bottle to standard format
+          ls -la *.tar.gz
+        shell: bash
+
+      - name: Upload bottle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bottle-${{ matrix.bottle_tag }}
+          path: '*.tar.gz'
+
+  upload-release:
+    needs: build-bottles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all bottle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: bottles
+          pattern: bottle-*
+
+      - name: Display downloaded bottles
+        run: |
+          ls -la bottles/
+          find bottles/ -name "*.tar.gz" -type f
+
+      - name: Upload bottles to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: bottles/**/*.tar.gz
+          tag_name: ${{ github.event.inputs.version && format('v{0}', github.event.inputs.version) || github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-formula:
+    needs: [build-bottles, upload-release]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Download bottle artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: bottles
+          pattern: bottle-*
+
+      - name: Generate bottle checksums and update formula
+        run: |
+          # Find all bottle files
+          BOTTLE_ROOT_URL="https://github.com/kckylechen1/homebrew-tachi/releases/download/v${{ github.event.inputs.version || github.ref_name }}"
+          
+          # Generate bottle block
+          cat > bottle_block.txt << 'EOF'
+          bottle do
+          EOF
+          
+          # Process each bottle
+          for bottle_file in $(find bottles/ -name "*.tar.gz" -type f); do
+            # Extract bottle tag from filename
+            bottle_name=$(basename "$bottle_file")
+            sha256=$(sha256sum "$bottle_file" | cut -d' ' -f1)
+            
+            # Map bottle tags to Homebrew cellar format
+            if [[ "$bottle_name" == *"arm64"* ]]; then
+              echo "    sha256 cellar: :any, arm64_tahoe: \"$sha256\"" >> bottle_block.txt
+            elif [[ "$bottle_name" == *"ventura"* ]] || [[ "$bottle_name" == *"x86_64"* && "$bottle_name" != *"linux"* ]]; then
+              echo "    sha256 cellar: :any, ventura: \"$sha256\"" >> bottle_block.txt
+            elif [[ "$bottle_name" == *"linux"* ]]; then
+              echo "    sha256 cellar: :any_skip_relocation, x86_64_linux: \"$sha256\"" >> bottle_block.txt
+            fi
+          done
+          
+          cat >> bottle_block.txt << 'EOF'
+          end
+          EOF
+          
+          cat bottle_block.txt
+
+      - name: Update formula with bottle block
+        run: |
+          # Read the bottle block
+          BOTTLE_BLOCK=$(cat bottle_block.txt)
+          
+          # Use awk to insert bottle block after the license line
+          awk -v block="$BOTTLE_BLOCK" '
+            /^  license / {
+              print
+              print ""
+              # Print bottle block line by line
+              n = split(block, lines, "\n")
+              for (i = 1; i <= n; i++) {
+                if (lines[i] != "") {
+                  print lines[i]
+                }
+              }
+              next
+            }
+            { print }
+          ' Formula/tachi.rb > Formula/tachi.rb.new
+          
+          mv Formula/tachi.rb.new Formula/tachi.rb
+          cat Formula/tachi.rb
+
+      - name: Commit and push updated formula
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add Formula/tachi.rb
+          git commit -m "chore: add bottle checksums for v${{ github.event.inputs.version || github.ref_name }}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
