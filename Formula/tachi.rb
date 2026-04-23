@@ -1,8 +1,8 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v0.16.0.tar.gz"
-  sha256 "5cf5c40248e87bee6d3f225589e1c84e58e5bb354459d39a93b9818533fcff3b"
+  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v0.16.1.tar.gz"
+  sha256 "3cc284a375afc2e42b065d562c403e4ff0c442bd6b9dd08a76377807a2d8dac5"
   license "AGPL-3.0"
   head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
@@ -15,13 +15,17 @@ class Tachi < Formula
 
   def install
     system "cargo", "build", "--release", "--locked", "-p", "memory-server",
+           "--bins",
            "--target-dir", buildpath/"target"
     bin.install buildpath/"target/release/memory-server" => "tachi"
+    bin.install buildpath/"target/release/tachi-hub" => "tachi-hub"
   end
 
   test do
     assert_match version.to_s, shell_output("#{bin}/tachi --version")
     assert_match "memory + Hub MCP server", shell_output("#{bin}/tachi --help")
+    assert_match version.to_s, shell_output("#{bin}/tachi-hub --version")
+    assert_match "Inspect Tachi Hub registry", shell_output("#{bin}/tachi-hub --help")
 
     db_path = testpath/"tachi-homebrew-test.db"
     text = "Homebrew smoke test memory"
@@ -37,8 +41,8 @@ class Tachi < Formula
   def caveats
     <<~EOS
       Tachi is installed at:
-
         #{opt_bin}/tachi
+        #{opt_bin}/tachi-hub
 
       To use Tachi with your MCP client, add this command to your config:
 
@@ -58,6 +62,7 @@ class Tachi < Formula
       Quick smoke test:
         tachi --help
         tachi --no-project-db stats
+        tachi-hub stats
     EOS
   end
 end
