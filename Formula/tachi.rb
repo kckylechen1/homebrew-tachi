@@ -1,8 +1,8 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v0.16.3.tar.gz"
-  sha256 "c3c9af42ae129870d212f79cfe397a79ed35a1e4f63a4dde78e1f6dd715a7020"
+  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v0.16.4.tar.gz"
+  sha256 "d4394e1231c463901e7aac32549fe5112a46d7dd02ef855427b022ab7d737b55"
   license "AGPL-3.0"
   head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
