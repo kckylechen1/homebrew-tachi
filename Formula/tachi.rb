@@ -1,9 +1,9 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "da3dbdee10bab539ebc7cbde380863ea3d6a534c43cc4da1f1758468f2849e9b"
-  license "AGPL-3.0"
+  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v1.6.1.tar.gz"
+  sha256 "10e9bdd88ca9751097aa79ac16dde70a20afa6842c514d4bd80d003b09f68215"
+  license "AGPL-3.0-only"
   head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
   livecheck do
@@ -14,36 +14,25 @@ class Tachi < Formula
   depends_on "rust" => :build
 
   def install
-    system "cargo", "build", "--release", "--locked", "-p", "memory-server",
-           "--bins",
-           "--target-dir", buildpath/"target"
-    bin.install buildpath/"target/release/memory-server" => "tachi"
-    bin.install buildpath/"target/release/tachi-hub" => "tachi-hub"
+    system "cargo", "install", *std_cargo_args(path: "crates/memory-server"),
+           "--bin", "memory-server"
+    mv bin/"memory-server", bin/"tachi"
   end
 
-  test do
-    assert_match version.to_s, shell_output("#{bin}/tachi --version")
-    assert_match "memory + Hub MCP server", shell_output("#{bin}/tachi --help")
-    assert_match version.to_s, shell_output("#{bin}/tachi-hub --version")
-    assert_match "Inspect Tachi Hub registry", shell_output("#{bin}/tachi-hub --help")
-
-    db_path = testpath/"tachi-homebrew-test.db"
-    text = "Homebrew smoke test memory"
-
-    saved = shell_output("MEMORY_DB_PATH=#{db_path} #{bin}/tachi --no-project-db save --path /test/homebrew '#{text}'")
-    assert_match '"saved": true', saved
-
-    stats = shell_output("MEMORY_DB_PATH=#{db_path} #{bin}/tachi --no-project-db stats")
-    assert_match '"total": 1', stats
-    assert_match db_path.to_s, stats
+  service do
+    run [opt_bin/"tachi", "--daemon", "--port", "0", "--no-project-db"]
+    environment_variables PATH:                           std_service_path_env,
+                          TACHI_DAEMON_IDLE_TIMEOUT_SECS: "0",
+                          TACHI_PROFILE:                  "standard"
+    keep_alive true
+    log_path var/"log/tachi.log"
+    error_log_path var/"log/tachi.err.log"
   end
 
   def caveats
     <<~EOS
       Tachi is installed at:
         #{opt_bin}/tachi
-        #{opt_bin}/tachi-hub
-
       To use Tachi with your MCP client, add this command to your config:
 
         {
@@ -62,7 +51,25 @@ class Tachi < Formula
       Quick smoke test:
         tachi --help
         tachi --no-project-db stats
-        tachi-hub stats
+        tachi hub stats
     EOS
+  end
+
+  test do
+    assert_match version.to_s, shell_output("#{bin}/tachi --version")
+    assert_match "memory + Hub MCP server", shell_output("#{bin}/tachi --help")
+    assert_match "Hub registry", shell_output("#{bin}/tachi hub --help")
+    db_path = testpath/"tachi-homebrew-test.db"
+    text = "Homebrew smoke test memory from formula verification with enough " \
+           "characters to avoid the capture floor warning. It validates that " \
+           "the installed Tachi binary can save to an isolated MEMORY_DB_PATH."
+
+    saved = shell_output("MEMORY_DB_PATH=#{db_path} #{bin}/tachi --no-project-db save " \
+                         "--path /scratch/homebrew '#{text}'")
+    assert_match "\"status\": \"saved", saved
+
+    stats = shell_output("MEMORY_DB_PATH=#{db_path} #{bin}/tachi --no-project-db stats")
+    assert_match "\"total\": 1", stats
+    assert_match db_path.to_s, stats
   end
 end
