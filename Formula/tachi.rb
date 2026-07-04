@@ -1,8 +1,8 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v1.6.1.tar.gz"
-  sha256 "10e9bdd88ca9751097aa79ac16dde70a20afa6842c514d4bd80d003b09f68215"
+  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v1.6.2.tar.gz"
+  sha256 "6930c163bdc1a8b97c71529cf424f77424d600295c9015158719a997a58a5387"
   license "AGPL-3.0-only"
   head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
@@ -20,11 +20,10 @@ class Tachi < Formula
   end
 
   service do
-    run [opt_bin/"tachi", "--daemon", "--port", "0", "--no-project-db"]
+    run [opt_bin/"tachi", "--daemon", "--port", "6919", "--no-project-db"]
     environment_variables PATH:                           std_service_path_env,
                           TACHI_DAEMON_IDLE_TIMEOUT_SECS: "0",
                           TACHI_PROFILE:                  "standard"
-    keep_alive true
     log_path var/"log/tachi.log"
     error_log_path var/"log/tachi.err.log"
   end
