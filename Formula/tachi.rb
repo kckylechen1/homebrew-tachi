@@ -4,6 +4,7 @@ class Tachi < Formula
   url "https://github.com/kckylechen1/tachi/archive/refs/tags/v1.6.4.tar.gz"
   sha256 "79c0df4ab09cf5f09203e1329331a9797f32ad555ce2fc7cc6e0447f98577b38"
   license "AGPL-3.0-only"
+  disable! date: "2026-07-08", because: "private-source transition pending reviewed public artifact promotion"
   head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
   livecheck do
