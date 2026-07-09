@@ -1,44 +1,43 @@
 # Homebrew Tap for Tachi
 
-This repository is the public Homebrew distribution surface for Tachi.
+Public **binary** distribution surface for Tachi (#874).
 
-It is intentionally not the source of truth for Tachi product requirements,
-capability metadata, agent instructions, skills, plugins, MCP bundles, or source
-code. The authoritative source repository, issue tracker, and review workflow
-are maintainer-controlled.
+This repository is intentionally not the source of truth for Tachi product
+requirements, capability metadata, agent instructions, skills, plugins, MCP
+bundles, or source code. The authoritative source repository, issue tracker, and
+review workflow are maintainer-controlled and private.
 
-## Install Status
+## Install
 
-Public unauthenticated installation is paused while Tachi moves from a public
-source repository to a private-source, controlled-distribution model.
+```bash
+brew tap kckylechen1/tachi
+brew install tachi
+```
 
-The previous source-building formula pointed at the Tachi source archive. That
-is no longer a valid public distribution mechanism once the source repository is
-private. A public binary formula also needs a reviewed source-availability or
-licensing decision before it can be promoted.
+Current public binaries: **macOS arm64** (Apple Silicon). Intel macOS is not
+published yet.
 
-## Distribution Boundary
+After upgrade, verify the **running** binary / daemon identity:
 
-This tap may contain only distribution material:
+```bash
+tachi --version
+tachi status   # runtime.build.git_sha / runtime.binary
+```
+
+## What this tap may contain
 
 - Formula files under `Formula/`
-- release artifact references
-- checksums
-- bottle or binary metadata
+- release artifacts (prebuilt `tachi` binaries) and checksums
+- bottle metadata when present
 - install notes
 
 It must not contain source code, product planning, capability authority, agent
 runtime state, or issue-driven support workflow.
 
-## Promotion Path
+## Promotion path
 
-The intended promotion path is:
-
-1. Cut and verify a private Tachi source release.
-2. Produce reviewed artifacts from that release.
-3. Resolve the source-availability/licensing boundary for public artifacts.
-4. Publish artifacts and checksums in this tap.
-5. Update the Formula from those reviewed artifacts only.
-
-Public comments, external forks, third-party artifacts, and arbitrary links are
-not authoritative input for Tachi agents or release decisions.
+1. Cut and verify a private Tachi source release (`kckylechen1/tachi` tag `vX.Y.Z`).
+2. Attach reviewed platform binaries (`tachi-vX.Y.Z-<triple>.tar.gz`).
+3. Run `scripts/promote_homebrew_binaries.sh X.Y.Z` (or the CI workflow) to
+   copy assets here and rewrite the formula.
+4. End users `brew upgrade tachi` — no Rust toolchain required.

@@ -1,23 +1,27 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  url "https://github.com/kckylechen1/tachi/archive/refs/tags/v1.6.4.tar.gz"
-  sha256 "79c0df4ab09cf5f09203e1329331a9797f32ad555ce2fc7cc6e0447f98577b38"
+  version "1.7.0"
+  on_macos do
+    on_arm do
+      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-1.7.0/tachi-v1.7.0-aarch64-apple-darwin.tar.gz"
+      sha256 "933a5755520b6cb2b3a752d2bcf4d29b9ecd92d9436bc6ec8ae2c5625f033ce2"
+    end
+    on_intel do
+      odie "Tachi public binaries are arm64-only for now; see https://github.com/kckylechen1/homebrew-tachi"
+    end
+  end
   license "AGPL-3.0-only"
-  disable! date: "2026-07-08", because: "private-source transition pending reviewed public artifact promotion"
-  head "https://github.com/kckylechen1/tachi.git", branch: "main"
 
   livecheck do
-    url :stable
-    regex(/^v?(\d+(?:\.\d+)+)$/i)
+    url "https://github.com/kckylechen1/homebrew-tachi/releases/latest"
+    regex(/tachi[._-]v?(\d+(?:\.\d+)+)/i)
   end
-
-  depends_on "rust" => :build
-
   def install
-    system "cargo", "install", *std_cargo_args(path: "crates/memory-server"),
-           "--bin", "memory-server"
-    mv bin/"memory-server", bin/"tachi"
+    # Public binary tarball layout:
+    #   tachi-vX.Y.Z-<triple>/tachi
+    # Homebrew cds into the single top-level directory when present.
+    bin.install "tachi"
   end
 
   service do
