@@ -1,11 +1,11 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  version "1.8.0"
+  version "1.9.0"
   on_macos do
     on_arm do
-      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-1.8.0/tachi-v1.8.0-aarch64-apple-darwin.tar.gz"
-      sha256 "200efee44b9a789655c66671dabe515d9b5abd4d4e3357e335a2e12fa5acb36d"
+      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-1.9.0/tachi-v1.9.0-aarch64-apple-darwin.tar.gz"
+      sha256 "d06670364532b00927c6d6c7b8c4b8e9562a9f588ef7ecc35a8b2547d6fe9239"
     end
     on_intel do
       odie "Tachi public binaries are arm64-only for now; see https://github.com/kckylechen1/homebrew-tachi"
@@ -26,6 +26,11 @@ class Tachi < Formula
 
   service do
     run [opt_bin/"tachi", "--daemon", "--port", "6919", "--no-project-db"]
+    # KeepAlive so launchd respawns the daemon after any exit — including the
+    # fail-loud serve contract and liveness watchdog exits (#936), which rely on
+    # the supervisor restarting a serving process. launchd's default
+    # ThrottleInterval (~10s) rate-limits respawns.
+    keep_alive true
     environment_variables PATH:                           std_service_path_env,
                           TACHI_DAEMON_IDLE_TIMEOUT_SECS: "0",
                           TACHI_PROFILE:                  "standard"
