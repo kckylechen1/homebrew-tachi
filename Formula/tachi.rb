@@ -1,11 +1,11 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  version "1.9.2"
+  version "2.0.0"
   on_macos do
     on_arm do
-      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-1.9.2/tachi-v1.9.2-aarch64-apple-darwin.tar.gz"
-      sha256 "cad6dbceccd87279572ce81915e0d930547697404cceda3ac679a7c1d4f7b8bb"
+      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-2.0.0/tachi-v2.0.0-aarch64-apple-darwin.tar.gz"
+      sha256 "aa41fea71d58b3909750978f41712b9847301a4ed23f3137308bc3b8644e219b"
     end
     on_intel do
       odie "Tachi public binaries are arm64-only for now; see https://github.com/kckylechen1/homebrew-tachi"
