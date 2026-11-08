@@ -1,11 +1,11 @@
 class Tachi < Formula
   desc "Local-first memory + Hub for AI agents (MCP server)"
   homepage "https://github.com/kckylechen1/tachi"
-  version "2.0.0"
+  version "2.1.0"
   on_macos do
     on_arm do
-      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-2.0.0/tachi-v2.0.0-aarch64-apple-darwin.tar.gz"
-      sha256 "aa41fea71d58b3909750978f41712b9847301a4ed23f3137308bc3b8644e219b"
+      url "https://github.com/kckylechen1/homebrew-tachi/releases/download/tachi-2.1.0/tachi-v2.1.0-aarch64-apple-darwin.tar.gz"
+      sha256 "6a3ed33718e46ff96ba9aeb9759d53d68ca78ceb085e573bfc02b8b4b4476b72"
     end
     on_intel do
       odie "Tachi public binaries are arm64-only for now; see https://github.com/kckylechen1/homebrew-tachi"
@@ -32,8 +32,7 @@ class Tachi < Formula
     # ThrottleInterval (~10s) rate-limits respawns.
     keep_alive true
     environment_variables PATH:                           std_service_path_env,
-                          TACHI_DAEMON_IDLE_TIMEOUT_SECS: "0",
-                          TACHI_PROFILE:                  "standard"
+                          TACHI_DAEMON_IDLE_TIMEOUT_SECS: "0"
     log_path var/"log/tachi.log"
     error_log_path var/"log/tachi.err.log"
   end
